@@ -2,12 +2,12 @@ import request from "supertest";
 import { v4 as uuid } from "uuid";
 import { hash } from "bcryptjs";
 
-import { Connection, createConnection, getConnection } from "typeorm";
+import { Connection, createConnection } from "typeorm";
 import { app } from "../../../../app";
 
 let connection: Connection;
 
-describe(`Create Statement controller`, () => {
+describe(`get Statement controller`, () => {
   beforeAll(async () => {
     connection = await createConnection();
 
@@ -42,7 +42,7 @@ describe(`Create Statement controller`, () => {
     await connection.close();
   });
 
-  it(`Should be able a create new statement with type deposit`, async () => {
+  it(`Should be able a get statements`, async () => {
     const session = await request(app).post("/api/v1/sessions").send({
       email: "admin@gmail.com",
       password: "admin",
@@ -50,7 +50,7 @@ describe(`Create Statement controller`, () => {
 
     const { token } = session.body;
 
-    const response = await request(app)
+    const statement = await request(app)
       .post("/api/v1/statements/deposit")
       .send({
         amount: 20,
@@ -60,31 +60,17 @@ describe(`Create Statement controller`, () => {
         authorization: `Bearer ${token}`,
       });
 
-    expect(response.status).toBe(201);
-  });
-
-  it(`Should be able a create new statement with type withdraw`, async () => {
-    const session = await request(app).post("/api/v1/sessions").send({
-      email: "admin@gmail.com",
-      password: "admin",
-    });
-
-    const { token } = session.body;
-
     const response = await request(app)
-      .post("/api/v1/statements/withdraw")
-      .send({
-        amount: 10,
-        description: "A new statement do it",
-      })
+      .get(`/api/v1/statements/${statement.body.id}`)
       .set({
         authorization: `Bearer ${token}`,
       });
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty("amount");
   });
 
-  it(`Should not be able a create new statement with insufficient founds`, async () => {
+  it(`Should not be able a get statements with a invalid user`, async () => {
     const session = await request(app).post("/api/v1/sessions").send({
       email: "admin@gmail.com",
       password: "admin",
@@ -92,8 +78,8 @@ describe(`Create Statement controller`, () => {
 
     const { token } = session.body;
 
-    const response = await request(app)
-      .post("/api/v1/statements/withdraw")
+    const statement = await request(app)
+      .post("/api/v1/statements/deposit")
       .send({
         amount: 20,
         description: "A new statement do it",
@@ -102,19 +88,29 @@ describe(`Create Statement controller`, () => {
         authorization: `Bearer ${token}`,
       });
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBe("Insufficient funds");
-  });
-
-  it(`Should not be able a create new statement without authentication`, async () => {
-    const response = await request(app)
-      .post("/api/v1/statements/withdraw")
-      .send({
-        amount: 20,
-        description: "A new statement do it",
-      });
+    const response = await request(app).get(
+      `/api/v1/statements/${statement.body.id}`
+    );
 
     expect(response.status).toBe(401);
     expect(response.body.message).toBe("JWT token is missing!");
+  });
+
+  it(`Should not be able a get statements with a invalid statement`, async () => {
+    const session = await request(app).post("/api/v1/sessions").send({
+      email: "admin@gmail.com",
+      password: "admin",
+    });
+
+    const { token } = session.body;
+
+    const response = await request(app)
+      .get(`/api/v1/statements/${uuid()}`)
+      .set({
+        authorization: `Bearer ${token}`,
+      });
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe("Statement not found");
   });
 });

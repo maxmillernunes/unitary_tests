@@ -21,7 +21,7 @@ describe("Create Statements", () => {
     );
   });
 
-  it(`Should be able a create a new statements with type deposit`, async () => {
+  it(`Should be able a get statements with type deposit`, async () => {
     const userData = {
       name: "John do",
       email: "johndo@gmail.com",
@@ -52,7 +52,7 @@ describe("Create Statements", () => {
     expect(statement.type).toEqual("deposit");
   });
 
-  it(`Should not be able a create a new statements with a invalid user`, async () => {
+  it(`Should not be able a get statements with a invalid user`, async () => {
     expect(async () => {
       await getStatementOperationUseCase.execute({
         statement_id: "non-exists-statement",
@@ -61,11 +61,22 @@ describe("Create Statements", () => {
     }).rejects.toBeInstanceOf(AppError);
   });
 
-  it(`Should not be able a create a new statements with a invalid statement`, async () => {
+  it(`Should not be able a get with a invalid statement`, async () => {
+    const userData = {
+      name: "John do",
+      email: "johndo@gmail.com",
+      password: "123",
+    };
+    const user = await usersRepository.create({
+      name: userData.name,
+      email: userData.email,
+      password: userData.password,
+    });
+
     expect(async () => {
       await getStatementOperationUseCase.execute({
         statement_id: "non-exists-statement",
-        user_id: "non-exists-user",
+        user_id: user.id,
       });
     }).rejects.toBeInstanceOf(AppError);
   });

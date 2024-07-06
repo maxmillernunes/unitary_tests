@@ -22,7 +22,7 @@ describe("Create Statements", () => {
     );
   });
 
-  it(`Should be able a create a new statements with type deposit`, async () => {
+  it(`Should be able a get a new statements with type deposit`, async () => {
     const userData = {
       name: "John do",
       email: "johndo@gmail.com",
